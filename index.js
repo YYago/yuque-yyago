@@ -1,0 +1,478 @@
+/**
+ * @file yuque.js
+ * @author 学点网<https://gitee.com/class877>
+ * @description 语雀API request-promiser 实现。
+ * 2020/03/21
+*/
+
+"use strict";
+/***/
+const reqProm = require('request-promise');
+/**
+ * @class yuqu
+ * @param {string} token 在语雀创建的 token 值。
+ * @description 
+ * 
+ *  - request-promiser 返回值均为 Promiser 对象。
+ *  - 没有对错误以及请求结果进行处理。
+ */
+class yuque {
+    constructor(token) {
+        /** token */
+        this.token = token;
+        /** 
+         * 客户端名称(用于headers头User-Agent)，默认：`npm_package:yuque-yyago`
+         * 
+         *  **WARN**
+         * - 使用空的 User-Agent 会被拒绝访问。
+        */
+        this.appName = "npm_package:yuque-yyago";
+        /**
+         *  请求路径
+         * - 默认：`https://www.yuque.com/api/v2`
+         * - 企业空间企业的二级域名，例如：`https://tmall.yuque.com/api/v2`
+        */
+        this.root = 'https://www.yuque.com/api/v2';
+        /** 请求头*/
+        this.reqHeades = {
+            "User-Agent": this.appName,
+            "X-Auth-Token": this.token
+        }
+    }
+    _urlConcat(dir) {
+        return `${this.root}/${dir}`;
+    }
+    /**
+     * 获取用户信息
+     * @method userInfo
+     * @param {string} loginOrID 用户登录名或者用户ID
+     */
+    userInfo(loginOrID) {
+        const options = {
+            uri: this._urlConcat(`users/${loginOrID}`),
+            headers: this.reqHeades,
+            json: true,
+        }
+        return reqProm(options)
+    }
+    /**
+     * 获取认证用户信息
+     *  - 需要认证
+     *  - 返回结果同 `userInfo(loginOrID)`
+     * @method user_real_info
+     */
+    user_real_info() {
+        const opt = {
+            uri: this._urlConcat('user'),
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 获取公开组织列表
+     */
+    group_pubilic() {
+        const options = {
+            method: 'get',
+            uri: this._urlConcat(`groups`),
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(options)
+    }
+    /**
+     * 获取用户加入的组织列表
+     * @param {string} user 用户ID或者用户名（登陆名）
+     */
+    group_joined(user) {
+        const options = {
+            uri: this._urlConcat(`users/${user}/groups`),
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(options)
+    }
+    /**
+     * 创建组织
+     * @param {string} name 组织名称
+     * @param {string} login login 组织标识(理解为组织英文名即可，命名规则参考语雀官方)
+     * @param {string} description 组织介绍
+     * @example
+     *  .group_create('视频剪辑交流','vloger','交流视频剪辑的种种。').then().catch()
+     */
+    group_create(name, login, description) {
+        const options = {
+            method: 'POST',
+            uri: this._urlConcat(`groups`),
+            headers: this.reqHeades,
+            body: {
+                name: name,
+                login: login,
+                description: description
+            },
+            json: true,
+        }
+        return reqProm(options)
+    }
+    /**
+     * 获取组织的详细信息
+     * @method group_info
+     * @param {string} group 组织login或者组织ID
+     */
+    group_info(group) {
+        const opt = {
+            uri: this._urlConcat(`groups/${group}`),
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 更新组织的详细信息
+     * @method group_update
+     * @param {string} group 组织标识（组织ID或者组织登陆名）
+     * @param {object} updateAs
+     * @param {string} updateAs.name 组织名称
+     * @param {string} updateAs.login 组织login或者组织ID
+     * @param {string} updateAs.description 介绍
+     */
+    group_update(group, updateAs = { name, login, description }) {
+        const opt = {
+            method: 'PUT',
+            uri: this._urlConcat(`groups/${group}`),
+            headers: this.reqHeades,
+            body: updateAs,
+            json: true
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 删除组织
+     * 
+     * NOTE: 此接口仅会删除 Group 基本信息，其他有关的仓库、文档、画板均保持不动，以避免误删除以后需要恢复。
+     * @method group_delete
+     * @param {string} group 组织标识（组织ID或者组织登陆名）
+     */
+    group_delete(group) {
+        const opt = {
+            method: 'DELETE',
+            uri: this._urlConcat(`groups/${group}`),
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 获取组织成员信息
+     * @method group_members_info
+     * @param {string} group 组织标识（组织ID或者组织登陆名）
+     */
+    group_members_info(group) {
+        const opt = {
+            uri: this._urlConcat(`groups/${group}/users`),
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 增加或者更新组织成员
+     * @method group_members_update
+     * @param {string} group 组织标识（组织ID或者组织登陆名）
+     * @param {string} member 成员标识（成员登陆ming名或者ID）
+     * @param {number} role 权限设置，`0`:管理员，`1`: 普通成员
+     * 
+     * NOTE：
+     * 
+     *  - 组织和成员里，如果用的是ID，就统一使用ID，没有测试混合使用会不会导致操作失败，自行测试。
+     *  - 有权限才能操作。
+     */
+    group_members_update(group, member, role) {
+        const opt = {
+            method: 'PUT',
+            uri: this._urlConcat(`groups/${group}/users/${member}`),
+            headers: this.reqHeades,
+            body: {
+                role: role
+            },
+            json: true
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 删除成员
+     * @method group_members_delete
+     * @param {string} group 组织标识（组织ID或者组织登陆名）
+     * @param {string} member 成员标识（成员登陆ming名或者ID）
+     */
+    group_members_delete(group, member) {
+        const opt = {
+            method: 'DELETE',
+            uri: this._urlConcat(`groups/${group}/users/${member}`),
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(opt)
+    }
+
+    // ---- 知识库 ----
+
+    /**
+     * 获取用户/团队的知识库列表
+     * @method repos_list
+     * @param {string} loginOrID 标识（团队和个人的登录名或者ID）
+     * @param {number} category 知识库归属，`0`:为个人，`1`: 为团队（因为API基本一致，但区分个人和团队，为了减少代码量用`category`参数来指定知识库归属）
+     * @param {object} param
+     * @param {string} param.type 知识库类型，支持的值：`Book`、`Design`、`all`
+     * @param {number} param.offset 用于分页，效果类似 MySQL 的 limit offset，一页 20 条
+     */
+    repos_list(loginOrID, category, param = { type, offset }) {
+        let goto;
+        if (category == 1) {
+            goto = this._urlConcat(`groups/${loginOrID}/repos`)
+        } else {
+            goto = this._urlConcat(`users/${loginOrID}/repos`)
+        }
+        const opt = {
+            uri: goto,
+            qs: param,
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 创建知识库
+     * @method repos_create
+     * @param {string} user 标识（团队和个人的登录名或者ID）
+     * @param {number} category 知识库归属，`0`:为个人，`1`: 为团队（因为API基本一致，但区分个人和团队，为了减少代码量用`category`参数来指定知识库归属）
+     * @param {object} setting
+     * @param {string} setting.name 仓库名称
+     * @param {string} setting.slug 仓库标识（理解为仓库英文名就好）
+     * @param {string} setting.description 说明介绍
+     * @param {number} setting.public 仓库可见性（公开程度——对谁可见），对应的值：
+     * 
+     *  - `0`：私密，
+     *  - `1`：对所有人可见，
+     *  - `2`：空间成员可见，
+     *  - `3`：空间所有人（含外部联系人）可见，
+     *  - `4`：知识库成员可见。
+     * @param {string} setting.type 仓库类型，可选的值（大小写敏感）：
+     * 
+     *  - `Book` 文库
+     *  - `Design` 画板
+     */
+    repos_create(user, category, setting = { name: '', slug, description, public: '', type: '' }) {
+        let goto;
+        if (category == 1) {
+            goto = this._urlConcat(`groups/${user}/repos`)
+        } else {
+            goto = this._urlConcat(`users/${user}/repos`)
+        }
+        const opt = {
+            method: 'POST',
+            uri: goto,
+            headers: this.reqHeades,
+            body: setting,
+            json: true
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 获取知识库详情
+     * @method repos_info
+     * @param {string} reposNamespace 知识库命名空间或者知识库ID
+     * @param {object} param
+     * @param {string} param.type 知识库类型，可选值：`Book`：文库、`Design`：设计稿
+     */
+    repos_info(reposNamespace, param = { type }) {
+        const opt = {
+            qs: param,
+            uri: this._urlConcat(`repos/${reposNamespace}`),
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(opt)
+    }
+
+    /**
+     * 更新知识库信息
+     * @method repos_update
+     * @param {string} reposNamespace 知识库命名空间或者知识库ID
+     * @param {object} param
+     * @param {string} param.name 仓库名称
+     * @param {string} param.slug slug
+     * @param {string} param.toc 更新文档仓库的目录信息
+     * @param {string} param.description 说明（介绍）
+     * @param {number} param.public 仓库权限，可选的值：
+     * 
+     *  - `0`: 私密
+     *  - `1`：所有人可见
+     *  - `2`：空间成员可见
+     *  - `3`：空间所有人（含外部联系人）可见
+     *  - `4`：知识库成员可见
+     * 
+     */
+    repos_update(reposNamespace, param = { name: '', slug: '', toc: '', description: '', public: '' }) {
+        const opt = {
+            method: 'PUT',
+            uri: this._urlConcat(`repos/${reposNamespace}`),
+            headers: this.reqHeades,
+            body: param,
+            json: true
+        }
+        return reqProm(opt)
+    }
+
+    /**
+     * 删除知识库
+     * @method repos_delete
+     * @param {string} reposNamespace 知识库命名空间或者知识库ID
+     */
+    repos_delete(reposNamespace) {
+        const opt = {
+            method: 'DELETE',
+            uri: this._urlConcat(`repos/${reposNamespace}`),
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 获取一个知识库的目录结构
+     * @method repos_toc
+     * @param {string} reposNamespace 知识库命名空间或者知识库ID
+     */
+    repos_toc(reposNamespace) {
+        const opt = {
+            uri: this._urlConcat(`repos/${reposNamespace}/toc`),
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 搜素资源
+     * @method search
+     * @param {string} q 搜索关键字
+     * @param {sting} type 搜索的资源类型,备选项：
+     * 
+     *  - `topic`: 讨论
+     *  - `book` ： 知识库
+     *  - `doc` ： 文档
+     *  - `artbord`：画板
+     *  - `group`：团队
+     *  - `user`：用户
+     *  - `attachment`：附件
+     * @param {number} offset 分页
+     * @param {boolean} related 搜索与我相关的传递 `true`
+     * @example
+     * 
+     *  https://www.yuque.com/search?q=%E6%88%91%E4%BB%AC&type=book
+     */
+    search(q, type, offset, related) {
+        const opt = {
+            uri: this._urlConcat('search'),
+            qs: {
+                q: q,
+                type: type,
+                offset: offset,
+                related: related
+            },
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 获取一个仓库的文档列表
+     * @method docs_list
+     * @param {string} reposNamespace 知识库命名空间或者知识库ID
+     */
+    docs_list(reposNamespace) {
+        const opt = {
+            uri: this._urlConcat(`repos/${reposNamespace}/docs`),
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 获取单篇文档详细信息
+     * @method docs_docInfo
+     * @param {string} reposNamespace 知识库命名空间或者知识库ID
+     * @param {string} slug 文档名或者文档ID
+     * @param {number} raw raw 为`1` 返回文档最原始的格式
+     */
+    docs_docInfo(reposNamespace, slug, raw) {
+        const opt = {
+            uri: this._urlConcat(`repos/${reposNamespace}/docs/${slug}`),
+            qs: { raw: raw },
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 创建文档
+     * 
+     * **warn：不能直接提交文件。
+     * @method docs_creat
+     * @param {sting}  reposNamespace 知识库命名空间或者知识库ID
+     * @param {object} param
+     * @param {string} param.title 标题
+     * @param {string} param.slug 文档 Slug
+     * @param {number} param.public 文档权限。`0`:私密，`1`:公开
+     * @param {string} param.format 文档格式，支持 `markdown` 和 `lake`
+     * @param {string} param.body 正文内容
+     *
+     */
+    docs_creat(reposNamespace, param = { title, slug, public: '', format, body }) {
+        const opt = {
+            method: 'POST',
+            uri: this._urlConcat(`repos/${reposNamespace}/docs`),
+            headers: this.reqHeades,
+            body: param,
+            json: true
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 更新文档
+     * @method docs_update
+     * @param {string} reposNamespace 知识库命名空间或者知识库ID
+     * @param {string} id 文档编号，不是 slug，原因是为了避免 slug 改变无法正确保存。
+     * @param {object} param
+     * @param {string} param.title 标题
+     * @param {string} param.slug 文档 Slug
+     * @param {number} param.public 权限，`0`:私密，`1`:公开
+     * @param {string} param.body 已发布的正文 Markdown
+     */
+    docs_update(reposNamespace, id, param = { title, slug, public: '', body }) {
+        const opt = {
+            method: 'PUT',
+            uri: this._urlConcat(`repos/${reposNamespace}/docs/${id}`),
+            headers: this.reqHeades,
+            body: param,
+            json: true,
+        }
+        return reqProm(opt)
+    }
+    /**
+     * 删除文档
+     * @method docs_delete
+     * @param {string} reposNamespace 知识库命名空间或者知识库ID
+     * @param {string} id 文档编号
+     */
+    docs_delete(reposNamespace, id) {
+        const opt = {
+            method: 'DELETE',
+            uri: this._urlConcat(`repos/${reposNamespace}/docs/${id}`),
+            headers: this.reqHeades,
+            json: true
+        }
+        return reqProm(opt)
+    }
+}
+module.exports = yuque

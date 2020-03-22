@@ -1,0 +1,29 @@
+{
+  "name": "yuque-yyago",
+  "version": "1.0.0",
+  "description": "语雀 API for Nodejs use request-promise。",
+  "keywords": [
+    "语雀",
+    "语雀API"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "yyago",
+  "license": "MIT",
+  "dependencies": {
+    "request-promise": "^4.2.5"
+  },
+  "devDependencies": {
+    "request": "^2.88.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YYago/yuque-yyago.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YYago/yuque-yyago/issues"
+  },
+  "homepage": "https://github.com/YYago/yuque-yyago#readme"
+}
