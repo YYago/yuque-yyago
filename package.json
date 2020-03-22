@@ -1,6 +1,6 @@
 {
   "name": "yuque-yyago",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "语雀 API for Nodejs use request-promise。",
   "keywords": [
     "语雀",
